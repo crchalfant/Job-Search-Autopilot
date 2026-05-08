@@ -1,0 +1,66 @@
+MIT License + Commons Clause
+
+Copyright (c) 2026 Casey Chalfant
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or copy
+the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+Commons Clause — Commercial Use Restriction
+
+The Software is provided to you by the Licensor under the License above,
+subject to the following additional condition:
+
+Without limiting other conditions in the License, the grant of rights under
+the License does not include, and the License does not grant to you, the right
+to Sell the Software or any product or service that derives its primary value
+from the functionality of the Software, without first obtaining explicit written
+permission from the copyright holder.
+
+For purposes of this restriction, "Sell" means practicing any or all of the
+rights granted to you under the License to provide to third parties, for a fee
+or other consideration (including without limitation fees for hosting,
+consulting, or subscription services), a product or service whose value
+derives, entirely or substantially, from the functionality of the Software.
+
+If you wish to use this Software for commercial purposes — including but not
+limited to offering it as a paid tool, hosted service, or commercial product —
+you must contact the copyright holder to discuss licensing terms before doing so.
+
+Contact: Casey Chalfant
+Email:   Casey.Chalfant@protonmail.com
+GitHub:  https://github.com/crchalfant
+
+Any license notice or attribution required by the License must also include
+this Commons Clause restriction notice.
+
+Attribution: If you fork, adapt, or redistribute this Software, you must
+include the original copyright notice and a link to the original repository
+(https://github.com/crchalfant/job-search-autopilot or equivalent).
+
+---
+
+Summary
+
+  ✓ Free to use for personal job searching
+  ✓ Free to fork, modify, and share with others (with attribution)
+  ✓ Free to adapt for your own non-commercial use
+  ✗ Not free to sell, commercialize, or build a paid product on top of without
+    reaching out to Casey Chalfant first
+  ✗ Not free to redistribute without crediting the original repository

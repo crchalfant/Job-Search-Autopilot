@@ -1,0 +1,628 @@
+================================================================================
+JOB SEARCH AUTOPILOT - SETUP GUIDE
+================================================================================
+
+A personal job search automation tool that searches 13+ sources daily, rates
+every listing with Claude AI, and emails you a ranked digest each morning.
+
+This file is the deep-dive companion to README.md. It covers step-by-step
+setup, every customizable filter, and a full set of AI prompts you can paste
+directly into Claude or ChatGPT to configure the tool for your situation.
+
+
+--------------------------------------------------------------------------------
+STEP 0 - DOWNLOAD THE PROJECT FILES
+--------------------------------------------------------------------------------
+
+If you found this project on GitHub and don't have the files on your computer
+yet, here's how to download them:
+
+  1. Go to the project page on GitHub
+  2. Click the green "Code" button near the top right of the page
+  3. Click "Download ZIP"
+  4. Find the downloaded ZIP file (usually in your Downloads folder)
+  5. Right-click it and select "Extract All" (Windows) or double-click (Mac)
+  6. Move the extracted folder somewhere easy to find, like your Desktop
+     or Documents folder
+
+You should now have a folder called Job-Search-Autopilot (or similar) with
+all the project files inside. All the steps below are run from inside that
+folder.
+
+If you are comfortable with Git, you can also clone the repo instead:
+
+  git clone https://github.com/crchalfant/Job-Search-Autopilot.git
+
+
+--------------------------------------------------------------------------------
+BEFORE YOU START - WHAT YOU NEED
+--------------------------------------------------------------------------------
+
+You will need API keys for the following services. Getting all of them takes
+about 15 minutes. Detailed signup steps are in Step 2 below.
+
+  Anthropic (Claude AI)     console.anthropic.com         ~$1-5/month
+  Brave Search              api.search.brave.com          Free (2,000 req/mo)
+  Tavily                    app.tavily.com                Free (1,000 req/mo)
+  Adzuna                    developer.adzuna.com          Free
+  USAJobs (optional)        developer.usajobs.gov         Free
+
+  Email: You need a Gmail account with an App Password (not your login
+  password). Setup instructions are in Step 2 below.
+
+You also need Python 3.10 or later installed.
+Download it at: python.org/downloads
+
+
+--------------------------------------------------------------------------------
+FILE STRUCTURE
+--------------------------------------------------------------------------------
+
+Your project folder should look like this:
+
+  Job-Search-Autopilot/
+  |-- scripts/
+  |   |-- job_autopilot.py    (main autopilot - run this daily)
+  |   |-- dashboard.py        (Kanban dashboard)
+  |   |-- autopilot_shared.py (shared utilities - no config needed)
+  |   `-- config.py           (YOUR personal config - never commit this)
+  |-- config.example.py       (template to copy from)
+  |-- .env.example            (API key template to copy from)
+  |-- .env                    (YOUR API keys - never commit this)
+  |-- requirements.txt
+  |-- README.md
+  |-- SETUP.txt               (this file)
+  |-- LICENSE
+  |-- .gitignore
+  `-- output/
+      `-- Job Search Autopilot/  (runtime files - gitignored)
+
+
+--------------------------------------------------------------------------------
+STEP 1 - INSTALL DEPENDENCIES
+--------------------------------------------------------------------------------
+
+First, make sure Python 3.10 or later is installed on your computer.
+Download it at: python.org/downloads
+
+  WINDOWS TIP: During installation, check the box that says
+  "Add Python to PATH" — this is easy to miss and required.
+
+Next, open a terminal window inside your project folder:
+
+  Windows: Open the Job-Search-Autopilot folder in File Explorer, then
+           click the address bar at the top, type "cmd", and press Enter.
+           A black Command Prompt window will open in that folder.
+
+  Mac:     Open the Job-Search-Autopilot folder in Finder, then right-click
+           the folder and select "New Terminal at Folder". (If you don't see
+           that option, go to System Settings > Privacy & Security > Developer
+           Tools and enable Terminal.)
+
+Then run:
+
+  pip install -r requirements.txt
+
+If you get a "pip not found" error, try:
+
+  python -m pip install -r requirements.txt
+
+
+--------------------------------------------------------------------------------
+STEP 2 - GET YOUR API KEYS AND SET THEM UP
+--------------------------------------------------------------------------------
+
+Copy the .env.example file to a new file called .env in the same folder:
+
+  Windows:  copy .env.example .env
+  Mac/Linux: cp .env.example .env
+
+Then open the .env file in a text editor and fill in your keys:
+
+  Windows: Right-click the .env file → Open With → Notepad
+           (If you don't see .env in File Explorer, it may be hidden.
+           Go to View → check "Hidden items" to show it.)
+  Mac:     Right-click the .env file → Open With → TextEdit
+
+Then get each key using the instructions below and fill them in.
+
+
+ANTHROPIC (CLAUDE AI) — required, ~$1-5/month
+  Used to rate every job posting. The only paid service.
+
+  1. Go to: console.anthropic.com
+  2. Create an account and add a payment method (pay per use, no subscription)
+  3. Click "API Keys" in the left sidebar → "Create Key"
+  4. Copy the key — it starts with sk-ant-
+
+  ANTHROPIC_API_KEY=sk-ant-your-key-here
+
+
+BRAVE SEARCH — required, free
+  Used to search the web for job postings.
+
+  1. Go to: api.search.brave.com
+  2. Click "Get Started" → create a free account
+  3. Go to "API Keys" → "Create API Key" → select the Free plan (2,000 req/mo)
+  4. Copy the key — it starts with BSA
+
+  BRAVE_API_KEY=BSA-your-key-here
+
+
+TAVILY — required, free
+  A second search engine used as a backup to Brave.
+
+  1. Go to: app.tavily.com
+  2. Sign up for a free account
+  3. Your API key is shown on the dashboard immediately after signup
+  4. Copy the key — it starts with tvly-
+
+  TAVILY_API_KEY=tvly-your-key-here
+
+
+ADZUNA — required, free
+  A job board API that returns structured listings with salary data.
+  You need both an App ID and an App Key.
+
+  1. Go to: developer.adzuna.com
+  2. Click "Register" → create a free account
+  3. Go to "Dashboard" → "API Access Details"
+  4. Copy both your App ID and App Key
+
+  ADZUNA_APP_ID=your-app-id
+  ADZUNA_APP_KEY=your-app-key
+
+
+GMAIL APP PASSWORD — required, free
+  The autopilot sends your daily email via Gmail. You need an App Password —
+  a 16-character code that lets apps access Gmail without your main password.
+
+  Before you start: 2-Step Verification must be enabled on your Google account.
+  Enable it at: myaccount.google.com/security
+
+  1. Go to: myaccount.google.com/apppasswords
+     (or: Google Account > Security > 2-Step Verification > App passwords)
+  2. Under "App name", type: Job Search Autopilot
+  3. Click "Create"
+  4. Copy the 16-character password shown — it looks like: xxxx xxxx xxxx xxxx
+     (enter it without spaces)
+
+  GMAIL_ADDRESS=youraddress@gmail.com
+  GMAIL_APP_PW=xxxxxxxxxxxxxxxx
+
+
+USAJOBS — optional, free
+  Only needed if you want federal government job listings. Skip if not.
+
+  1. Go to: developer.usajobs.gov
+  2. Click "Request an API Key" and fill in the form (approved instantly)
+  3. You will receive the key by email
+  4. Set both variables — the key and the email address you registered with
+
+  USAJOBS_API_KEY=your-key-here
+  USAJOBS_EMAIL=youraddress@gmail.com
+
+
+Save the .env file when done. Never commit it to GitHub — the .gitignore
+already protects it.
+
+
+--------------------------------------------------------------------------------
+STEP 3 - SET UP YOUR CONFIG FILE
+--------------------------------------------------------------------------------
+
+Copy the config.example.py file to scripts/config.py:
+
+  Windows:  copy config.example.py scripts\config.py
+  Mac/Linux: cp config.example.py scripts/config.py
+
+Now open scripts/config.py in a text editor and customize it for yourself.
+
+  Windows: Right-click scripts/config.py → Open With → Notepad
+  Mac:     Right-click scripts/config.py → Open With → TextEdit
+
+See the "CUSTOMIZING YOUR CONFIG WITH AI" section below for the easiest way
+to do this — you can have Claude or ChatGPT fill in most of it for you.
+
+The key things to update:
+
+  TARGET_TITLES     Keywords for your target role types (e.g. "software engineer", "data analyst")
+  TITLE_BLOCK_WORDS Words that disqualify a title even if it matched TARGET_TITLES (e.g. "intern", "sales")
+  PROFILE           Your current role, target roles, and career summary
+  MIN_SALARY        Your minimum acceptable salary (number, e.g. 120000 for $120K)
+  LOCAL_METRO_TERMS Your city and surrounding metro area names
+  COMPANIES         ATS company slugs for Greenhouse/Lever/Ashby employers
+  WORKDAY_COMPANIES Workday company entries for companies that use Workday ATS
+  VACATION_START    Set to a past date if you are not on vacation
+  VACATION_END      Set to a past date if you are not on vacation
+
+
+--------------------------------------------------------------------------------
+STEP 4 - RUN THE AUTOPILOT
+--------------------------------------------------------------------------------
+
+From your project root folder, run:
+
+  python scripts/job_autopilot.py --run
+
+The first run takes 5-10 minutes. You will see each source being searched
+in the console. When it finishes, check your email inbox for the digest.
+
+Add --verbose to see source latencies and filter details:
+
+  python scripts/job_autopilot.py --run --verbose
+
+
+--------------------------------------------------------------------------------
+STEP 5 - START THE DASHBOARD
+--------------------------------------------------------------------------------
+
+Run the dashboard to see your pipeline as a Kanban board:
+
+  python scripts/dashboard.py
+
+Then open http://localhost:5000 in your browser.
+
+IMPORTANT: Keep the terminal window open the entire time you use the dashboard.
+The dashboard stops working if you close it. To stop the dashboard, press Ctrl+C.
+
+The dashboard has three tabs:
+  Command Center  - Your active pipeline (Reviewing, Applied, Interviewing)
+  Skipped         - Everything the autopilot filtered out (good for spot-checking)
+  Health          - Run history, source counts, and filter breakdowns
+
+
+--------------------------------------------------------------------------------
+STEP 6 - SCHEDULE DAILY RUNS
+--------------------------------------------------------------------------------
+
+WINDOWS - Task Scheduler:
+  1. Open Task Scheduler (search for it in the Start menu)
+  2. Click "Create Basic Task"
+  3. Name: Job Search Autopilot
+  4. Trigger: Daily, at 7:00 AM (or whenever you want your morning email)
+  5. Action: Start a program
+  6. Program: python
+  7. Arguments: scripts\job_autopilot.py --run
+  8. Start in: C:\path\to\Job-Search-Autopilot
+  9. Click Finish
+
+MAC/LINUX - Cron job:
+  Open a terminal and type: crontab -e
+  Add this line (runs at 7am on weekdays):
+
+    0 7 * * 1-5 cd /path/to/Job-Search-Autopilot && python scripts/job_autopilot.py --run
+
+  Save and exit.
+
+
+================================================================================
+WHAT FILTERS CAN YOU CUSTOMIZE?
+================================================================================
+
+SALARY FLOOR
+  File: scripts/config.py — variable: MIN_SALARY
+  Set this to your minimum acceptable annual salary as a plain number with no
+  commas or dollar sign (e.g. 120000 for $120K). Jobs with a confirmed salary
+  range entirely below this are filtered out. Jobs with no salary listed always
+  pass through.
+
+LOCATION FILTER — CITIES TO BLOCK
+  File: scripts/config.py — variables: URL_CITY_PATTERN and LOC_CITY_PATTERN
+  Two regex strings that detect when a job requires onsite attendance in a city
+  outside your metro. Remove any cities within your commutable area, or add
+  cities you want to block. Jobs with "remote" anywhere in the title or
+  description always pass through regardless of these patterns.
+
+YOUR LOCAL METRO AREA
+  File: scripts/config.py — variable: LOCAL_METRO_TERMS
+  A set of city and suburb names that define your local commutable area. The
+  autopilot uses this to identify local hybrid/onsite roles and show them in a
+  separate section of your daily email.
+
+HARD DISQUALIFIERS (auto-Skip before Claude)
+  File: scripts/config.py — variable: HARD_DISQUALIFIERS
+  Phrases that automatically Skip a job before it reaches Claude. Common
+  entries include staffing agency language, contract role signals, and
+  domain-specific terms you never want to see.
+
+HARD DISQUALIFIER REGEX (word-boundary matching)
+  File: scripts/config.py — variable: HARD_DISQ_PATTERN
+  A regex string for disqualifiers where a plain substring match would cause
+  false positives. For example, r"\bdefi\b|\bcrypto\b" matches "defi" and
+  "crypto" as whole words but not "define" or "cryptography".
+
+STAFFING AGENCY BLOCKLIST
+  File: scripts/config.py — variable: COMPANY_PREFILTER
+  Known staffing and recruiting firms whose listings are skipped automatically.
+  Format: {"company name substring": ("staffing", "reason string")}
+
+JOB TITLE FILTER
+  File: scripts/config.py — variable: TARGET_TITLES
+  Keywords used to filter results from ATS boards, Workday, Jobicy, RemoteOK,
+  and UltiPro. A job must contain at least one of these keywords in its title
+  to be kept. Update this list to match your target role types.
+
+  File: scripts/config.py — variable: TITLE_BLOCK_WORDS
+  Words that disqualify a title even if it matched TARGET_TITLES. Use this to
+  drop wrong-function roles (e.g. "engineer", "designer") or wrong-seniority
+  roles (e.g. "intern", "associate") that sneak through.
+
+  File: scripts/config.py — variable: WRONG_TITLE_PATTERNS
+  A list of regex patterns that filter out wrong-function job titles before
+  Claude sees them.
+  File: scripts/job_autopilot.py — search for: "Perfect Fit" = 90-100%
+  The most powerful customization. The tier definitions and hard disqualifier
+  rules are plain English — edit them to describe your own situation.
+
+
+================================================================================
+CUSTOMIZING YOUR CONFIG WITH AI — VIBE CODING
+================================================================================
+
+This tool is designed to be customized to your specific job search. The
+filters, search queries, company list, and rating logic are all plain text
+or simple Python lists — readable and editable even if you are not a developer.
+
+The easiest way to personalize it is to upload the files directly into
+Claude (claude.ai) or ChatGPT (chatgpt.com) and describe what you want.
+You do not need to understand every line of code. Just tell the AI what to
+change and it handles the syntax.
+
+
+================================================================================
+QUICK START — ONE PROMPT TO SET UP EVERYTHING
+================================================================================
+
+This is the fastest way to get running. One upload, one prompt, done.
+
+HOW TO DO IT:
+  1. Go to claude.ai or chatgpt.com
+  2. Start a new conversation
+  3. Upload BOTH of these files as attachments:
+       - config.example.py
+       - job_autopilot.py
+  4. Paste the prompt below (fill in the [brackets] with your info)
+  5. Copy the AI's output back into your scripts/config.py file
+  6. Run: python scripts/job_autopilot.py --run
+
+PASTE THIS PROMPT (fill in the brackets):
+
+---
+I've attached config.example.py and job_autopilot.py from a job search
+automation tool. I need you to fill in config.example.py for my situation
+so I can use it as my personal config.py file.
+
+Here's my info:
+
+  Name: [Your Name]
+  Current role: [Your Title] at [Your Company]
+  Target roles: [e.g. Software Engineer, Data Scientist, Marketing Manager]
+  Target industries: [e.g. healthcare tech, SaaS, fintech, e-commerce]
+  Target salary: $[amount]+ (e.g. $120,000+)
+  Location: [e.g. "Remote nationwide" OR "Remote or hybrid in Chicago area"]
+  My city and nearby suburbs: [e.g. Chicago, Evanston, Oak Park, Naperville]
+  Things I never want: [e.g. contract roles, crypto, people management]
+  My core strengths: [e.g. Python, data pipelines, team leadership]
+
+Please fill in ALL of these sections in config.example.py:
+  1. PROFILE — write my candidate profile (8-12 lines)
+  2. TARGET_TITLES — keywords for my target roles
+  3. TITLE_BLOCK_WORDS — job titles I don't want (wrong function/seniority)
+  4. LOCAL_METRO_TERMS — my city and suburbs
+  5. URL_CITY_PATTERN and LOC_CITY_PATTERN — block cities outside my metro
+  6. MIN_SALARY — my salary floor
+  7. All search query lists (ADZUNA_QUERIES, BRAVE_QUERIES, TAVILY_QUERIES,
+     LI_REMOTE_QUERIES, LI_LOCAL_QUERIES, HIMALAYAS_QUERIES, JOBICY_QUERIES,
+     USAJOBS_QUERIES)
+  8. COMPANIES — suggest 20-30 companies in my target industries with their
+     ATS slugs (Greenhouse/Lever/Ashby)
+  9. WORKDAY_COMPANIES — any large companies in my industry that use Workday
+  10. HARD_DISQUALIFIERS — phrases I never want to see
+  11. WRONG_TITLE_PATTERNS — regex patterns for wrong job titles
+
+Return the complete config.example.py file with everything filled in so I
+can save it directly as my config.py.
+---
+
+That's it! Save the AI's response as scripts/config.py and you're ready to run.
+
+
+================================================================================
+INDIVIDUAL PROMPTS — FOR FINE-TUNING LATER
+================================================================================
+
+Once you're up and running, use these prompts to adjust specific parts of
+your config. Upload config.example.py (or your scripts/config.py) and paste
+the relevant prompt below.
+
+HOW TO DO IT (same every time):
+  1. Go to claude.ai or chatgpt.com
+  2. Upload the file you want to change (usually scripts/config.py)
+  3. Paste the prompt below (fill in your details)
+  4. Copy the updated code back into your file
+
+
+--------------------------------------------------------------------------------
+PROMPT 1 - SET UP YOUR CANDIDATE PROFILE
+--------------------------------------------------------------------------------
+
+---
+I am setting up a job search automation tool and need help writing my candidate
+profile block. Here is my background:
+
+Current role: [Your current title] at [Your current company], [start date] - present
+Previous roles: [List your 2-3 most recent roles with titles and companies]
+Key achievements: [2-3 specific metrics or accomplishments]
+Target roles: [List the job titles you are looking for]
+Target industries: [e.g. healthcare tech, SaaS, fintech]
+Target salary: $[amount]+
+Location: Remote (nationwide) OR on-site/hybrid in [Your city] area only
+Hard no's: [Things you definitely do not want]
+Core strengths: [3-5 things you are genuinely great at]
+
+Please write a PROFILE string for my config.py file. Keep it factual and
+concise — 8 to 12 lines. Format it exactly like this:
+
+PROFILE = """
+[profile content here]
+"""
+---
+
+
+--------------------------------------------------------------------------------
+PROMPT 2 - CUSTOMIZE YOUR SEARCH QUERIES
+--------------------------------------------------------------------------------
+
+---
+I am setting up a job search tool and need help writing search query lists for
+my config.py file.
+
+My target roles are: [e.g. Senior Product Manager, Senior Product Owner,
+Principal PM, Director of Product, Senior Business Analyst]
+
+My target industries are: [e.g. healthcare tech, SaaS, fintech]
+
+My local city is: [Your city]
+
+I need query lists for these variables:
+  ADZUNA_QUERIES     (10-15 queries, plain keyword strings)
+  BRAVE_QUERIES      (8-12 queries, written like natural search phrases)
+  TAVILY_QUERIES     (8-12 queries, written like natural search phrases)
+  LI_REMOTE_QUERIES  (8-12 short keyword queries for LinkedIn remote searches)
+  LI_LOCAL_QUERIES   (5-8 queries that include your city name)
+
+Please write these as Python lists I can paste directly into my config.py.
+---
+
+
+--------------------------------------------------------------------------------
+PROMPT 3 - BUILD YOUR ATS COMPANY LIST
+--------------------------------------------------------------------------------
+
+---
+I am building a list of companies to monitor directly via their ATS job boards.
+The tool checks Greenhouse (boards.greenhouse.io/SLUG), Lever
+(jobs.lever.co/SLUG), and Ashby (jobs.ashbyhq.com/SLUG) automatically for
+each slug in the COMPANIES list.
+
+It also checks Workday companies via the WORKDAY_COMPANIES list, which uses
+the format: (tenant, wd_server, site, display_name).
+
+My target industries are: [e.g. healthcare tech, SaaS, fintech]
+My target roles are: [e.g. Senior Product Manager, Product Owner, Business Analyst]
+
+Please suggest 40-60 companies in these industries and give me their likely
+ATS slug or Workday tenant. Format your answer as Python lists I can paste
+into my config.py.
+---
+
+
+--------------------------------------------------------------------------------
+PROMPT 4 - TUNE THE CLAUDE RATING PROMPT
+--------------------------------------------------------------------------------
+
+---
+I have a job search automation tool that uses Claude AI to rate job listings.
+The rating prompt defines four tiers: Excellent Fit, Good Fit, Worth a Look,
+and Skip.
+
+Here is my background: [paste your PROFILE here]
+
+Here is the current relevant section of my rating prompt:
+[paste the lines from job_autopilot.py starting with "Perfect Fit = 90-100%"
+through the end of the HARD DISQUALIFIERS section]
+
+Please suggest specific changes to improve the accuracy of ratings for my
+situation. Show me the exact text to replace, and what to replace it with.
+---
+
+
+--------------------------------------------------------------------------------
+PROMPT 5 - ADD A COMPANY THAT IS NOT IN YOUR LIST
+--------------------------------------------------------------------------------
+
+---
+I want to add [Company Name] to my job search autopilot's ATS company list.
+The tool checks Greenhouse (boards.greenhouse.io/SLUG), Lever
+(jobs.lever.co/SLUG), and Ashby (jobs.ashbyhq.com/SLUG) automatically.
+
+Can you help me find the correct slug for this company? If you are not sure,
+suggest the most likely options I can test.
+
+If they use Workday, their careers URL will look like:
+https://{tenant}.{wdN}.myworkdayjobs.com/en-US/{site}
+Please provide the (tenant, wd_server, site, display_name) tuple for
+WORKDAY_COMPANIES if applicable.
+---
+
+
+--------------------------------------------------------------------------------
+PROMPT 6 - TROUBLESHOOT QUIET DAYS
+--------------------------------------------------------------------------------
+
+---
+My job search autopilot ran today and found [X] raw jobs but rated them all
+as Skip or filtered them all out. Here is the filter breakdown from the
+console output:
+
+[paste the "Filter breakdown" line from the console, or the contents of the
+ Health tab in the dashboard]
+
+My target roles are: [your target roles]
+My location requirements: remote nationwide OR on-site/hybrid in [your city]
+My salary floor: $[amount]
+
+What might be causing so many jobs to be filtered? What should I check or
+adjust in my config.py to get better results?
+---
+
+
+================================================================================
+FREQUENTLY ASKED QUESTIONS
+================================================================================
+
+Q: The autopilot ran but I got no email - what happened?
+A: Check your .env file. The most common cause is an incorrect GMAIL_APP_PW.
+   Make sure you used a Gmail App Password (the xxxx-xxxx-xxxx-xxxx format),
+   not your regular Gmail login password. Also check your spam folder.
+
+Q: A source is showing 0 results - is something broken?
+A: The autopilot will warn you in the email subject line if an expected source
+   returns zero results. Check your API keys in .env for that source. LinkedIn
+   rate-limits aggressively so occasional zeros there are normal.
+
+Q: Jobs from companies I rejected keep coming back - why?
+A: Reject jobs using the trash icon on the dashboard Command Center tab, not
+   just the Skipped tab. Rejected jobs are permanently hidden. Dismissed jobs
+   on the Skipped tab just hide them from that view.
+
+Q: How do I add a company to track?
+A: Find their ATS slug (see Prompt 5 above) and add it to the COMPANIES list
+   in scripts/config.py. For Workday companies, add a tuple to WORKDAY_COMPANIES.
+   The autopilot will start picking up their jobs on the next run.
+
+Q: Can I run it more than once a day?
+A: Yes. Each run creates its own output file with a timestamp, so multiple
+   daily runs are safe and all results show up on the dashboard.
+
+Q: How do I change the salary floor?
+A: Change MIN_SALARY in scripts/config.py. It is a number without commas
+   or dollar signs (e.g. 120000 for $120K).
+
+Q: I am not a developer. Can I still use this?
+A: Yes. The setup steps above are the only technical part. Once it is running,
+   everything else can be done by pasting prompts into Claude or ChatGPT and
+   copying the output back. You do not need to write any code.
+
+
+================================================================================
+GETTING HELP
+================================================================================
+
+If you run into issues, paste your error message or console output into Claude
+or ChatGPT along with a description of what you were trying to do. Most setup
+issues are config or API key related and are easy to diagnose this way.
+
+For questions about the code or commercial licensing, open an issue on GitHub:
+https://github.com/crchalfant/Job-Search-Autopilot/issues

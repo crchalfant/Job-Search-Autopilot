@@ -1,0 +1,44 @@
+# ── Personal configuration (NEVER commit) ─────────────────────────────────────
+scripts/config.py
+.env
+
+# ── Runtime output (generated, not source) ───────────────────────────────────
+output/
+*.seen.json
+*.seen.json.*
+board_state.json
+flagged_for_review.json
+vacation_buffer.json
+autopilot_runs.db
+autopilot_runs.db-wal
+autopilot_runs.db-shm
+debug_job_log.txt
+*-report.md
+*-jobs.json
+*-skipped.json
+.company_cache.json
+filtered_log.json
+
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+
+# ── Temp / crash artifacts ────────────────────────────────────────────────────
+*.tmp
+*.corrupt
+
+# ── OS / editor ───────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
