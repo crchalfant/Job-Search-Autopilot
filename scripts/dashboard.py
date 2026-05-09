@@ -2274,7 +2274,7 @@ function renderHealth(data) {
         <div class="health-view">
           <div class="health-hero">
             <div class="health-header">
-              <div class="eyebrow" style="margin-bottom:12px;">Job Autopilot Health</div>
+              <div class="eyebrow" style="margin-bottom:12px;">Autopilot health</div>
               <div class="health-title">Autopilot Performance</div>
               <div class="health-subtitle">Statistics for every run, every source, every filter — all in one place</div>
             </div>
@@ -2360,7 +2360,7 @@ function renderHealth(data) {
       <div class="health-view">
         <div class="health-hero">
           <div class="health-header">
-            <div class="eyebrow" style="margin-bottom:12px;">Job Autopilot Health</div>
+            <div class="eyebrow" style="margin-bottom:12px;">Autopilot health</div>
             <div class="health-title">Autopilot Performance</div>
             <div class="health-subtitle">Your last ${data.runs.length} runs</div>
           </div>
@@ -2645,7 +2645,7 @@ function renderBoard(data) {
       <section class="hero">
         <div class="hero-top">
           <div class="hero-copy">
-            <div class="eyebrow">Daily job command center</div>
+            <div class="eyebrow">Job Search Command Center</div>
             <div class="hero-title">Job Search Autopilot</div>
             <div class="hero-subtitle">Track fresh opportunities, and move good jobs through your pipeline.</div>
           </div>

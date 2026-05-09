@@ -3205,80 +3205,106 @@ def search_workday():
         }
         results = []
         seen_paths = set()
-        offset = 0
-        limit  = 20
-        # Cap at 3 pages (60 jobs) per company — enough to catch all matching roles
-        for _ in range(3):
-            try:
-                r = requests.post(
-                    search_url,
-                    json={"appliedFacets": {}, "limit": limit, "offset": offset, "searchText": ""},
-                    headers=headers,
-                    timeout=12,
-                )
-                if r.status_code != 200:
+
+        # Search with a few broad keywords to surface matching roles from
+        # large companies (empty searchText only returns the first 60 jobs which
+        # may not include any matching titles at companies with 500+ postings).
+        # Keep this list short to avoid excessive API calls — broad terms like
+        # "product manager" already match "Senior Product Manager", "Lead PM", etc.
+        search_terms = ["product manager", "product owner", "business analyst", "systems analyst"]
+        for search_term in search_terms:
+            offset = 0
+            limit  = 20
+            # Cap at 3 pages (60 jobs) per search term
+            for _ in range(3):
+                try:
+                    r = requests.post(
+                        search_url,
+                        json={"appliedFacets": {}, "limit": limit, "offset": offset, "searchText": search_term},
+                        headers=headers,
+                        timeout=12,
+                    )
+                    if r.status_code != 200:
+                        break
+                    data     = r.json()
+                    postings = data.get("jobPostings", [])
+                    total    = data.get("total", 0)
+                    if not postings:
+                        break
+                    for p in postings:
+                        title = p.get("title", "")
+                        if not _title_ok(title):
+                            continue
+                        ext_path = p.get("externalPath", "")
+                        if not ext_path or ext_path in seen_paths:
+                            continue
+                        # Quick location pre-check — skip detail fetch for jobs
+                        # clearly outside the local metro (saves ~0.5s per job)
+                        loc_preview = (p.get("locationsText") or "").lower()
+                        if loc_preview and _LOC_CITY_RE.search(loc_preview):
+                            # Only skip if no remote signal in the location text
+                            if not any(s in loc_preview for s in ("remote", "work from home", "virtual")):
+                                continue
+                        seen_paths.add(ext_path)
+                        # Build the public job URL
+                        job_url = p.get("externalUrl") or f"{base}/en-US/{site}{ext_path}"
+                        # Fetch full job details for description and salary
+                        desc, sal_min, sal_max, location, posted = "", 0, 0, "", ""
+                        try:
+                            detail_url = f"{base}/wday/cxs/{tenant}/{site}{ext_path}"
+                            dr = requests.get(detail_url, headers=headers, timeout=10)
+                            if dr.status_code == 200:
+                                dj = dr.json()
+                                raw_desc = dj.get("jobDescription", "") or ""
+                                desc = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", html.unescape(raw_desc))).strip()[:10000]
+                                location = dj.get("locationsText") or dj.get("location") or ""
+                                posted   = (dj.get("postedOn") or p.get("postedOn") or "")[:10]
+                                # Salary: Workday doesn't expose a structured field — extract from description
+                                # (pay transparency laws mean many companies embed it in the JD)
+                        except Exception:
+                            pass
+                        results.append({
+                            "title":       title,
+                            "company":     display_name,
+                            "location":    location or p.get("locationsText", ""),
+                            "description": desc,
+                            "url":         job_url,
+                            "salary":      None,
+                            "salary_min":  sal_min,
+                            "salary_max":  sal_max,
+                            "posted":      posted,
+                            "source":      "Workday",
+                        })
+                        time.sleep(0.15)  # polite delay between detail fetches
+                    if offset + limit >= total:
+                        break
+                    offset += limit
+                    time.sleep(0.5)
+                except Exception as e:
+                    print(f"  Workday error ({display_name}): {e}")
                     break
-                data     = r.json()
-                postings = data.get("jobPostings", [])
-                total    = data.get("total", 0)
-                if not postings:
-                    break
-                for p in postings:
-                    title = p.get("title", "")
-                    if not _title_ok(title):
-                        continue
-                    ext_path = p.get("externalPath", "")
-                    if not ext_path or ext_path in seen_paths:
-                        continue
-                    seen_paths.add(ext_path)
-                    # Build the public job URL
-                    job_url = p.get("externalUrl") or f"{base}/en-US/{site}{ext_path}"
-                    # Fetch full job details for description and salary
-                    desc, sal_min, sal_max, location, posted = "", 0, 0, "", ""
-                    try:
-                        detail_url = f"{base}/wday/cxs/{tenant}/{site}{ext_path}"
-                        dr = requests.get(detail_url, headers=headers, timeout=10)
-                        if dr.status_code == 200:
-                            dj = dr.json()
-                            raw_desc = dj.get("jobDescription", "") or ""
-                            desc = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", html.unescape(raw_desc))).strip()[:10000]
-                            location = dj.get("locationsText") or dj.get("location") or ""
-                            posted   = (dj.get("postedOn") or p.get("postedOn") or "")[:10]
-                            # Salary: Workday doesn't expose a structured field — extract from description
-                            # (pay transparency laws mean many companies embed it in the JD)
-                    except Exception:
-                        pass
-                    results.append({
-                        "title":       title,
-                        "company":     display_name,
-                        "location":    location or p.get("locationsText", ""),
-                        "description": desc,
-                        "url":         job_url,
-                        "salary":      None,
-                        "salary_min":  sal_min,
-                        "salary_max":  sal_max,
-                        "posted":      posted,
-                        "source":      "Workday",
-                    })
-                    time.sleep(0.3)  # polite delay between detail fetches
-                if offset + limit >= total:
-                    break
-                offset += limit
-                time.sleep(1.0)
-            except Exception as e:
-                print(f"  Workday error ({display_name}): {e}")
-                break
         return results
 
     jobs = []
-    for tenant, wd_server, site, display_name in WORKDAY_COMPANIES:
-        time.sleep(1.0)  # polite delay between companies
-        found = _search_company(tenant, wd_server, site, display_name)
-        if found:
-            jobs.extend(found)
-            print(f"    ✓ Workday {display_name}: {len(found)} match{'es' if len(found) != 1 else ''}")
-        else:
-            print(f"    - Workday {display_name}: 0 matches")
+    # Run Workday companies in parallel — each is a different server/tenant so
+    # there's no shared rate limit between them. ThreadPool keeps it manageable.
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        futures = {
+            executor.submit(_search_company, tenant, wd_server, site, display_name): display_name
+            for tenant, wd_server, site, display_name in WORKDAY_COMPANIES
+        }
+        for future in as_completed(futures):
+            display_name = futures[future]
+            try:
+                found = future.result()
+                if found:
+                    jobs.extend(found)
+                    print(f"    ✓ Workday {display_name}: {len(found)} match{'es' if len(found) != 1 else ''}")
+                else:
+                    print(f"    - Workday {display_name}: 0 matches")
+            except Exception as e:
+                print(f"    ✗ Workday {display_name}: error — {e}")
     print(f"  Workday: {len(jobs)} total results from {len(WORKDAY_COMPANIES)} companies")
     return jobs
 
