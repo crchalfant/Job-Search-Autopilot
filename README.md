@@ -12,13 +12,13 @@ If you're job hunting, it saves you hours of manual searching. If you're new to 
 
 
 **Health tab**
-<img width="1253" height="1263" alt="Screenshot 2026-05-08 194455" src="https://github.com/user-attachments/assets/9c0f39d3-19de-4be2-9296-5e13d50b0371" />
+<img width="1267" height="1264" alt="Screenshot 2026-05-08 194455" src="https://github.com/user-attachments/assets/db2062e0-eb19-4b75-aabb-72bf6de53dda" />
 <img width="1259" height="1251" alt="Screenshot 2026-05-08 194530" src="https://github.com/user-attachments/assets/7789bed3-60d8-4ac2-8490-ece888dd8df2" />
 <img width="1031" height="417" alt="Screenshot 2026-05-08 194543" src="https://github.com/user-attachments/assets/8675a972-bc0c-4aaa-bf04-032f8eab59c8" />
 
 
 **Skipped jobs**
-<img width="1256" height="1223" alt="Screenshot 2026-05-08 194359" src="https://github.com/user-attachments/assets/054be652-f3bd-4bfd-8a4d-0fcbc7a38a7d" />
+<img width="1247" height="1262" alt="Screenshot 2026-05-08 194359" src="https://github.com/user-attachments/assets/f8889104-f081-4bb0-a635-08d06d1d38bb" />
 
 
 **Example email digest**

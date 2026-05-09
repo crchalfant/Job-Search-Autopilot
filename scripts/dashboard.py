@@ -2102,7 +2102,7 @@ function renderSkipped(data) {
               <div>
                 <div class="eyebrow" style="margin-bottom:12px;background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.28);color:#f6c56f;">Filtered out</div>
                 <div class="skipped-title">Skipped Jobs</div>
-                <div class="skipped-subtitle">Jobs your autopilot decided weren't a good fit</div>
+                <div class="skipped-subtitle">Jobs your autopilot decided wasn't a good fit based on your feedback and disqualifiers</div>
               </div>
             </div>
             <div class="empty-state">Nothing filtered out yet. Check back after the next run.</div>
@@ -2120,7 +2120,7 @@ function renderSkipped(data) {
             <div>
               <div class="eyebrow" style="margin-bottom:12px;background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.28);color:#f6c56f;">Filtered out</div>
               <div class="skipped-title">Skipped Jobs</div>
-              <div class="skipped-subtitle">${data.total} job${data.total !== 1 ? 's' : ''} your autopilot decided weren't a good fit — catch anything worth applying for and delete the rest</div>
+              <div class="skipped-subtitle" id="skipped-subtitle">${data.total} job${data.total !== 1 ? 's' : ''} your autopilot decided wasn't a good fit based on your feedback and disqualifiers</div>
             </div>
           </div>
           <div class="skipped-list">`;
@@ -2161,7 +2161,7 @@ function renderSkipped(data) {
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
           </button>
         </div>
-        <div class="flag-panel ${isFlagged ? 'open' : ''}" id="flagpanel-${cardId}">
+        <div class="flag-panel" id="flagpanel-${cardId}">
           <div class="flag-panel-label">🚩 Why should this job have been included?</div>
           <textarea class="flag-note-area" id="flagnote-${cardId}" placeholder="Tell the autopilot why — e.g. 'This is servicing, not underwriting'"></textarea>
           <div class="flag-panel-actions">
@@ -2275,7 +2275,7 @@ function renderHealth(data) {
           <div class="health-hero">
             <div class="health-header">
               <div class="eyebrow" style="margin-bottom:12px;">Job Autopilot Health</div>
-              <div class="health-title">Autopilot Functionality</div>
+              <div class="health-title">Autopilot Performance</div>
               <div class="health-subtitle">Statistics for every run, every source, every filter — all in one place</div>
             </div>
             <div class="health-no-data">Nothing here yet. It will populate after your next autopilot run.</div>
@@ -2361,7 +2361,7 @@ function renderHealth(data) {
         <div class="health-hero">
           <div class="health-header">
             <div class="eyebrow" style="margin-bottom:12px;">Job Autopilot Health</div>
-            <div class="health-title">Autopilot Functionality</div>
+            <div class="health-title">Autopilot Performance</div>
             <div class="health-subtitle">Your last ${data.runs.length} runs</div>
           </div>
           <div class="health-summary-grid">
@@ -2530,6 +2530,7 @@ async function restoreJob(btn, cardId) {
   card?.remove();
   _skipJobMap.delete(cardId);
   updateSkippedBadge(-1);
+  updateSkippedSubtitle();
   showToast('Moved to your board');
 }
 
@@ -2557,6 +2558,7 @@ async function dismissSkip(btn, cardId) {
   document.getElementById('skipcard-' + cardId)?.remove();
   _skipJobMap.delete(cardId);
   updateSkippedBadge(-1);
+  updateSkippedSubtitle();
   showToast('Removed');
   // FIX: if that was the last card, show the empty state so the view
   // doesn't go blank. Check the skipped-list container for remaining cards.
@@ -2567,7 +2569,7 @@ async function dismissSkip(btn, cardId) {
         <div class="skipped-header">
           <div>
             <div class="skipped-title">Skipped Jobs</div>
-            <div class="skipped-subtitle">Jobs your autopilot decided weren't a good fit</div>
+            <div class="skipped-subtitle">Jobs your autopilot decided wasn't a good fit based on your feedback and disqualifiers</div>
           </div>
         </div>
         <div class="empty-state">Nothing filtered out yet. Check back after the next run.</div>
@@ -2593,6 +2595,15 @@ async function submitFlag(btn, cardId) {
     card.classList.add('flagged-card');
     const panel = document.getElementById('flagpanel-' + cardId);
     if (panel) panel.classList.remove('open');
+    const flagBtn = card.querySelector('.btn-flag');
+    if (flagBtn) { flagBtn.classList.add('flagged'); flagBtn.textContent = '🚩 Flagged'; }
+    const metaRow = card.querySelector('.skip-meta-row');
+    if (metaRow && !metaRow.querySelector('.flagged-pill')) {
+      const pill = document.createElement('span');
+      pill.className = 'meta-pill flagged-pill';
+      pill.textContent = '🚩 Flagged for review';
+      metaRow.appendChild(pill);
+    }
   }
   showToast('🚩 Flagged for review — saved to flagged_for_review.json');
 }
@@ -2605,6 +2616,15 @@ function updateSkippedBadge(delta) {
   const next  = Math.max(0, curr + delta);
   if (badge) badge.textContent = next;
   if (stat)  stat.textContent  = next;
+}
+
+// Update the skipped subtitle count when jobs are removed.
+function updateSkippedSubtitle() {
+  const subtitle = document.getElementById('skipped-subtitle');
+  if (!subtitle) return;
+  const list = document.querySelector('.skipped-list');
+  const count = list ? list.querySelectorAll('.skip-card').length : 0;
+  subtitle.textContent = count + ' job' + (count !== 1 ? 's' : '') + ' your autopilot decided wasn\u2019t a good fit based on your feedback and disqualifiers';
 }
 
 // ── Board render ───────────────────────────────────────────────────────────────
@@ -2796,7 +2816,7 @@ function renderCard(job, col) {
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
         </button>
       </div>
-      <div class="card-flag-panel ${isFlagged ? 'open' : ''}" id="boardflagpanel-${cardId}">
+      <div class="card-flag-panel" id="boardflagpanel-${cardId}">
         <div class="flag-panel-label">🚩 What's wrong with this one?</div>
         <textarea class="flag-note-area" id="boardflagnote-${cardId}"
           placeholder="e.g. 'Staffing agency' or 'Title says PM but it's a sales role'"></textarea>

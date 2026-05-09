@@ -89,6 +89,7 @@ try:
         LI_REMOTE_QUERIES, LI_LOCAL_QUERIES,
         HIMALAYAS_QUERIES, USAJOBS_QUERIES, JOBICY_QUERIES,
         HARD_DISQUALIFIERS, HARD_DISQ_PATTERN, COMPANY_PREFILTER, WRONG_TITLE_PATTERNS,
+        JUNK_URL_PATTERNS,
     )
 except ModuleNotFoundError:
     raise SystemExit(
@@ -642,6 +643,18 @@ from config import URL_CITY_PATTERN as _URL_CITY_PAT, LOC_CITY_PATTERN as _LOC_C
 
 _URL_CITY_RE = re.compile(_URL_CITY_PAT, re.IGNORECASE)
 _LOC_CITY_RE = re.compile(_LOC_CITY_PAT, re.IGNORECASE)
+
+# ── JUNK URL FILTER — loaded from config.py ──────────────────────────────────
+# Generic hiring portals / landing pages that aren't actual job postings.
+_JUNK_URL_RE = re.compile("|".join(JUNK_URL_PATTERNS), re.IGNORECASE)
+
+
+def is_junk_url(job):
+    """Returns a reason string if the job URL matches a known junk/portal pattern, else None."""
+    url = (job.get("url") or "").lower()
+    if url and _JUNK_URL_RE.search(url):
+        return "Auto-skipped: generic hiring portal URL, not an actual job posting"
+    return None
 
 
 def is_bad_scrape(job):
@@ -4553,22 +4566,30 @@ def _run_pipeline(force_send, verbose, today, on_vacation, return_day,
     new_jobs = surviving_new_jobs
 
     # ── Pre-filter hard disqualifiers - marked as Skip without calling Claude API
-    # Three layers of pre-filtering (fastest to slowest):
-    #   1. has_disqualifier()      - keyword scan of title + description
-    #   2. is_wrong_title()        - regex match on title alone
-    #   3. is_company_prefilter()  - company-name match against structural always-Skip list
-    # All three mark the job as Skip and add to disqualified[] without touching Claude.
+    # Four layers of pre-filtering (fastest to slowest):
+    #   1. is_junk_url()           - URL match against known non-job portal pages
+    #   2. has_disqualifier()      - keyword scan of title + description
+    #   3. is_wrong_title()        - regex match on title alone
+    #   4. is_company_prefilter()  - company-name match against structural always-Skip list
+    # All four mark the job as Skip and add to disqualified[] without touching Claude.
     clean_jobs = []
     disqualified = []
     n_disq = 0
     n_wrong_title = 0
     n_company_filter = 0
+    n_junk_url = 0
     # FIX (code review): previously is_company_prefilter() was called unconditionally
     # for every job even when has_disqualifier() already matched. Short-circuit so
     # the company scan only runs when the first two checks both pass.
     for job in new_jobs:
-        match = has_disqualifier(job)
-        if match:
+        junk = is_junk_url(job)
+        if junk:
+            job["tier"]   = TIER_SKIP
+            job["reason"] = junk
+            job["salary_extracted"] = None
+            disqualified.append(job)
+            n_junk_url += 1
+        elif (match := has_disqualifier(job)):
             job["tier"]   = TIER_SKIP
             job["reason"] = f"Auto-disqualified: contains '{match}'"
             job["salary_extracted"] = None
@@ -4590,7 +4611,7 @@ def _run_pipeline(force_send, verbose, today, on_vacation, return_day,
                 n_company_filter += 1
             else:
                 clean_jobs.append(job)
-    print(f"Clean (to Claude): {len(clean_jobs)} | Keyword disq: {n_disq} | Wrong title: {n_wrong_title} | Company pre-filter: {n_company_filter}")
+    print(f"Clean (to Claude): {len(clean_jobs)} | Junk URL: {n_junk_url} | Keyword disq: {n_disq} | Wrong title: {n_wrong_title} | Company pre-filter: {n_company_filter}")
 
     # ── Rate clean jobs with Claude API - 5 parallel workers ─────────────────
     # _print_lock (module-level) ensures console output stays on clean separate lines
