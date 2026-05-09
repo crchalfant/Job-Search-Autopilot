@@ -8,21 +8,26 @@ If you're job hunting, it saves you hours of manual searching. If you're new to 
 
 ## Screenshots
 **Dashboard**
-<img width="1258" height="1257" alt="Screenshot 2026-05-08 194320" src="https://github.com/user-attachments/assets/d5b568a6-f53c-40cc-8847-73f48ab590c3" />
+<img width="1258" height="1257" alt="Screenshot 2026-05-08 194320" src="https://github.com/user-attachments/assets/df77e34d-2c64-4fcc-b61f-6e77238b91c0" />
+
 
 **Health tab**
-<img width="1253" height="1263" alt="Screenshot 2026-05-08 194455" src="https://github.com/user-attachments/assets/115333e9-44b3-4bcf-9d49-58f86f47d629" />
-<img width="1259" height="1251" alt="Screenshot 2026-05-08 194530" src="https://github.com/user-attachments/assets/102f472b-b89b-4406-ae28-2d3af51bd566" />
-<img width="1031" height="417" alt="Screenshot 2026-05-08 194543" src="https://github.com/user-attachments/assets/791c28de-3939-465c-bb3c-1b460c39e052" />
+<img width="1253" height="1263" alt="Screenshot 2026-05-08 194455" src="https://github.com/user-attachments/assets/9c0f39d3-19de-4be2-9296-5e13d50b0371" />
+<img width="1259" height="1251" alt="Screenshot 2026-05-08 194530" src="https://github.com/user-attachments/assets/7789bed3-60d8-4ac2-8490-ece888dd8df2" />
+<img width="1031" height="417" alt="Screenshot 2026-05-08 194543" src="https://github.com/user-attachments/assets/8675a972-bc0c-4aaa-bf04-032f8eab59c8" />
+
 
 **Skipped jobs**
-<img width="1256" height="1223" alt="Screenshot 2026-05-08 194359" src="https://github.com/user-attachments/assets/514edeab-c3c4-4c4d-bf91-705d9dd64f4a" />
+<img width="1256" height="1223" alt="Screenshot 2026-05-08 194359" src="https://github.com/user-attachments/assets/054be652-f3bd-4bfd-8a4d-0fcbc7a38a7d" />
+
 
 **Example email digest**
-<img width="1034" height="1157" alt="Screenshot 2026-05-08 185719" src="https://github.com/user-attachments/assets/c5025d6c-5970-46e0-98b3-d4a7794d5e4f" />
+<img width="1034" height="1157" alt="Screenshot 2026-05-08 185719" src="https://github.com/user-attachments/assets/464c3367-e266-4f6e-ad7d-f037616d3275" />
+
 
 **Console output**
-<img width="1659" height="1211" alt="Screenshot 2026-05-08 185814" src="https://github.com/user-attachments/assets/f03a5c4a-02bd-484d-b7da-8df65bba16b7" />
+<img width="1659" height="1211" alt="Screenshot 2026-05-08 185814" src="https://github.com/user-attachments/assets/4485a746-1d76-4f76-a72e-6ba86c997e62" />
+
 
 
 ## What it does
