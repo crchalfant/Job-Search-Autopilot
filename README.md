@@ -8,11 +8,10 @@ If you're job hunting, it saves you hours of manual searching. If you're new to 
 
 ## Screenshots
 **Dashboard**
-<img width="1258" height="1257" alt="Screenshot 2026-05-08 194320" src="https://github.com/user-attachments/assets/df77e34d-2c64-4fcc-b61f-6e77238b91c0" />
-
+<img width="1264" height="1260" alt="Screenshot 2026-05-08 194320" src="https://github.com/user-attachments/assets/1b88a446-9ee9-4a35-9b18-d1f77a75dc17" />
 
 **Health tab**
-<img width="1267" height="1264" alt="Screenshot 2026-05-08 194455" src="https://github.com/user-attachments/assets/db2062e0-eb19-4b75-aabb-72bf6de53dda" />
+<img width="1253" height="1260" alt="Screenshot 2026-05-08 194455" src="https://github.com/user-attachments/assets/848fd1f4-c364-46e4-ba50-b8a48cf9815e" />
 <img width="1259" height="1251" alt="Screenshot 2026-05-08 194530" src="https://github.com/user-attachments/assets/7789bed3-60d8-4ac2-8490-ece888dd8df2" />
 <img width="1031" height="417" alt="Screenshot 2026-05-08 194543" src="https://github.com/user-attachments/assets/8675a972-bc0c-4aaa-bf04-032f8eab59c8" />
 
