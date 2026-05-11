@@ -140,7 +140,7 @@ The `SETUP.txt` file has more detailed prompts for each specific part.
 
 ## What you can customize
 
-### In `config.py` (your personal file, never committed to GitHub)
+### In `config.py`
 
 **`TARGET_TITLES`** — the job title keywords used to filter results from ATS boards, Workday, Jobicy, RemoteOK, and UltiPro. A job must contain at least one of these keywords in its title to be kept. Update this list to match your target role types.
 
