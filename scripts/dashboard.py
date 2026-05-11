@@ -472,12 +472,17 @@ def api_skipped():
     skipped  = _cached_load_all_skipped()
     state    = load_board_state()
     # Exclude jobs the user has dismissed from skipped view, or already restored to board
+    # Also hide company pre-filtered jobs (staffing agencies etc.) — they're structural
+    # skips that clutter the review list without being useful to check.
     filtered = []
     for job in skipped:
         jid        = make_job_id(job)
         card_state = state.get(jid, {})
         if card_state.get("skip_dismissed") or card_state.get("column"):
             continue  # hidden or already on board
+        reason = job.get("reason", "")
+        if reason.startswith("Company pre-filter"):
+            continue  # structural skip — not useful to review
         filtered.append({**job, "id": jid, "flagged": card_state.get("flagged", False)})
     return jsonify({
         "jobs": filtered,
@@ -820,14 +825,14 @@ BOARD_HTML = r"""<!DOCTYPE html>
   header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     padding: 16px 32px;
     border-bottom: 1px solid var(--border);
     background: var(--surface);
     position: sticky;
     top: 0;
     z-index: 100;
-    gap: 20px;
+    gap: 32px;
   }
 
   .logo {
@@ -840,10 +845,10 @@ BOARD_HTML = r"""<!DOCTYPE html>
   .logo span { color: var(--accent2); font-style: italic; }
 
   .header-stats {
-    display: flex;
-    gap: 20px;
+    display: grid;
+    grid-template-columns: repeat(2, auto);
+    gap: 8px 20px;
     align-items: center;
-    flex-wrap: wrap;
   }
 
   .stat-chip {
@@ -948,6 +953,7 @@ BOARD_HTML = r"""<!DOCTYPE html>
     padding: 28px 28px 40px;
     max-width: 1680px;
     margin: 0 auto;
+    width: 100%;
   }
 
   .hero {
@@ -970,7 +976,7 @@ BOARD_HTML = r"""<!DOCTYPE html>
     margin-bottom: 24px;
   }
 
-  .hero-copy { max-width: 760px; }
+  .hero-copy { max-width: 900px; }
 
   .eyebrow {
     display: inline-flex;
@@ -1101,11 +1107,13 @@ BOARD_HTML = r"""<!DOCTYPE html>
     gap: 20px;
     padding: 28px 32px 48px;
     align-items: flex-start;
+    justify-content: center;
   }
 
   .column {
-    width: var(--col-w);
-    flex-shrink: 0;
+    flex: 1;
+    min-width: 300px;
+    max-width: 480px;
   }
 
   .col-header {
@@ -1280,7 +1288,8 @@ BOARD_HTML = r"""<!DOCTYPE html>
   /* ── Skipped list view ── */
   .skipped-view {
     padding: 28px 32px 48px;
-    max-width: 900px;
+    max-width: 1100px;
+    margin: 0 auto;
   }
 
   .skipped-header {
@@ -1857,7 +1866,7 @@ BOARD_HTML = r"""<!DOCTYPE html>
     .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .board-toolbar { grid-template-columns: 1fr 1fr; }
     .board { flex-direction: column; padding: 20px 16px; }
-    .column { width: 100%; }
+    .column { width: 100%; max-width: 100%; }
   }
 
   @media (max-width: 720px) {

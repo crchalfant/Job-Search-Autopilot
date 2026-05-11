@@ -187,6 +187,25 @@ WORKDAY_COMPANIES = [
     # ("amazon",    "wd5",  "Amazon",    "Amazon"),
 ]
 
+# ── DOMAIN -> COMPANY NAME MAP ────────────────────────────────────────────────
+# Maps URL domain substrings -> company display names for Brave/Tavily results
+# where the API returns no company field. First match wins.
+# Add entries for companies in your target industry whose job URLs you expect
+# to see in search results. Key = substring of the domain, value = display name.
+# TIP: Add "{tenant}.wd" entries for each WORKDAY_COMPANIES tenant so that
+# Brave/Tavily results linking to Workday pages get the correct company name.
+DOMAIN_COMPANY_MAP = {
+    # "yourcompany.com": "Your Company",
+    # "tenant.wd": "Company Name",  # for each Workday company above
+}
+
+# ── JUNK URL PATTERNS ─────────────────────────────────────────────────────────
+# URLs matching these patterns are generic hiring portals or landing pages,
+# not actual job postings. Jobs with these URLs are auto-skipped before Claude.
+JUNK_URL_PATTERNS = [
+    # r"hiring\.amazon\.com/locations/",
+]
+
 # ── SEARCH QUERIES ────────────────────────────────────────────────────────────
 # Replace [Your Role] and [Your Industry] with your actual target role keywords
 # and industry. Use partial keywords — "product manager" matches "Senior Product

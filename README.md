@@ -168,6 +168,10 @@ The `SETUP.txt` file has more detailed prompts for each specific part.
 
 **`WRONG_TITLE_PATTERNS`** — regex patterns that filter out wrong-function job titles before Claude sees them.
 
+**`DOMAIN_COMPANY_MAP`** — maps URL domain substrings to company display names. When Brave or Tavily finds a job on a Workday page (e.g. `capitalone.wd12.myworkdayjobs.com`), this map tells the autopilot the company is "Capital One" instead of showing a blank or generic name. Add `"{tenant}.wd": "Company Name"` for each entry in your `WORKDAY_COMPANIES` list.
+
+**`JUNK_URL_PATTERNS`** — regex patterns for URLs that are generic hiring portals or landing pages (not actual job postings). Jobs matching these are auto-skipped before Claude sees them.
+
 ### In `job_autopilot.py`
 
 **`SALARY_FLOOR_EXEMPT`** — companies you know pay well above your floor even when a search snippet shows a misleadingly low number.

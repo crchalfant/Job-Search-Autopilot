@@ -89,12 +89,46 @@ try:
         LI_REMOTE_QUERIES, LI_LOCAL_QUERIES,
         HIMALAYAS_QUERIES, USAJOBS_QUERIES, JOBICY_QUERIES,
         HARD_DISQUALIFIERS, HARD_DISQ_PATTERN, COMPANY_PREFILTER, WRONG_TITLE_PATTERNS,
-        JUNK_URL_PATTERNS,
     )
 except ModuleNotFoundError:
     raise SystemExit(
         "\nERROR: config.py not found.\n"
         "Create scripts/config.py — copy from the repo README and fill in your details.\n"
+    )
+except ImportError as e:
+    missing = str(e).split("'")[-2] if "'" in str(e) else str(e)
+    raise SystemExit(
+        f"\nERROR: config.py is missing a required setting: {missing}\n"
+        f"Open scripts/config.py and add it. See config.example.py for the template.\n"
+        f"Required settings: MIN_SALARY, VACATION_START, VACATION_END, PROFILE,\n"
+        f"  LOCAL_METRO_TERMS, QUOTES, ADZUNA_QUERIES, BRAVE_QUERIES, TAVILY_QUERIES,\n"
+        f"  LI_REMOTE_QUERIES, LI_LOCAL_QUERIES, HIMALAYAS_QUERIES, USAJOBS_QUERIES,\n"
+        f"  JOBICY_QUERIES, HARD_DISQUALIFIERS, HARD_DISQ_PATTERN, COMPANY_PREFILTER,\n"
+        f"  WRONG_TITLE_PATTERNS\n"
+    )
+
+# ── Optional config imports — graceful fallback with warnings ─────────────────
+import warnings as _warnings
+
+try:
+    from config import JUNK_URL_PATTERNS
+except ImportError:
+    JUNK_URL_PATTERNS = []
+    _warnings.warn(
+        "JUNK_URL_PATTERNS not found in config.py — using empty list. "
+        "Add it to filter out generic hiring portal URLs. See config.example.py.",
+        UserWarning, stacklevel=1,
+    )
+
+try:
+    from config import DOMAIN_COMPANY_MAP
+except ImportError:
+    DOMAIN_COMPANY_MAP = {}
+    _warnings.warn(
+        "DOMAIN_COMPANY_MAP not found in config.py — using empty dict. "
+        "Add it so Brave/Tavily results from Workday pages show the correct company name. "
+        "See config.example.py.",
+        UserWarning, stacklevel=1,
     )
 
 # Validate config values immediately after import so bad values surface as clear
@@ -338,17 +372,7 @@ except ImportError:
 # ── DOMAIN -> COMPANY NAME MAP ────────────────────────────────────────────────
 # Maps URL domain substrings -> company display names for Brave/Tavily results
 # where the API returns no company field. First match wins.
-# Add entries for companies in your target industry whose job URLs you expect
-# to see in search results. Key = substring of the domain, value = display name.
-DOMAIN_COMPANY_MAP: dict = {
-    # ── Major tech / enterprise software ─────────────────────────────────────
-    "salesforce": "Salesforce", "servicenow": "ServiceNow",
-    "workday": "Workday", "oracle": "Oracle", "sap.com": "SAP",
-    "ibm.com": "IBM", "microsoft": "Microsoft", "amazon": "Amazon",
-    "google": "Google",
-    # Add more domain -> company name mappings for your target industry:
-    # "yourcompany.com": "Your Company",
-}
+# Imported from config.py at startup (see optional imports section above).
 
 # ── CANDIDATE PROFILE (sent to Claude for rating) ───────────────────────────
 
@@ -646,11 +670,13 @@ _LOC_CITY_RE = re.compile(_LOC_CITY_PAT, re.IGNORECASE)
 
 # ── JUNK URL FILTER — loaded from config.py ──────────────────────────────────
 # Generic hiring portals / landing pages that aren't actual job postings.
-_JUNK_URL_RE = re.compile("|".join(JUNK_URL_PATTERNS), re.IGNORECASE)
+_JUNK_URL_RE = re.compile("|".join(JUNK_URL_PATTERNS), re.IGNORECASE) if JUNK_URL_PATTERNS else None
 
 
 def is_junk_url(job):
     """Returns a reason string if the job URL matches a known junk/portal pattern, else None."""
+    if not _JUNK_URL_RE:
+        return None
     url = (job.get("url") or "").lower()
     if url and _JUNK_URL_RE.search(url):
         return "Auto-skipped: generic hiring portal URL, not an actual job posting"
@@ -2534,6 +2560,9 @@ def brave_tavily_enrich_descriptions(jobs: list) -> None:
             )
             if r.status_code != 200:
                 errors += 1
+                # Mark dead links (404/410) so they get filtered out later
+                if r.status_code in (404, 410):
+                    job["_dead_link"] = True
                 print(f"    [{i+1}/{total}] ✗ HTTP {r.status_code}: {company} — {title}")
                 continue
 
@@ -3238,18 +3267,22 @@ def search_workday():
                         ext_path = p.get("externalPath", "")
                         if not ext_path or ext_path in seen_paths:
                             continue
-                        # Quick location pre-check — skip detail fetch for jobs
-                        # clearly outside the local metro (saves ~0.5s per job)
+                        # Workday location filter — allowlist approach:
+                        # Only keep jobs that are remote OR in the local metro.
+                        # This catches all non-local cities without needing to
+                        # enumerate every small city (Wilmington, McLean, etc.)
                         loc_preview = (p.get("locationsText") or "").lower()
-                        if loc_preview and _LOC_CITY_RE.search(loc_preview):
-                            # Only skip if no remote signal in the location text
-                            if not any(s in loc_preview for s in ("remote", "work from home", "virtual")):
+                        if loc_preview:
+                            has_remote = any(s in loc_preview for s in ("remote", "work from home", "virtual", "distributed"))
+                            has_local = any(t in loc_preview for t in LOCAL_METRO_TERMS)
+                            if not has_remote and not has_local:
                                 continue
                         seen_paths.add(ext_path)
                         # Build the public job URL
                         job_url = p.get("externalUrl") or f"{base}/en-US/{site}{ext_path}"
                         # Fetch full job details for description and salary
                         desc, sal_min, sal_max, location, posted = "", 0, 0, "", ""
+                        dead_link = False
                         try:
                             detail_url = f"{base}/wday/cxs/{tenant}/{site}{ext_path}"
                             dr = requests.get(detail_url, headers=headers, timeout=10)
@@ -3261,8 +3294,20 @@ def search_workday():
                                 posted   = (dj.get("postedOn") or p.get("postedOn") or "")[:10]
                                 # Salary: Workday doesn't expose a structured field — extract from description
                                 # (pay transparency laws mean many companies embed it in the JD)
+                            elif dr.status_code in (404, 410):
+                                dead_link = True
                         except Exception:
                             pass
+                        if dead_link:
+                            continue
+                        # Staleness filter: skip jobs posted more than 14 days ago
+                        if posted:
+                            try:
+                                post_date = datetime.strptime(posted[:10], "%Y-%m-%d").date()
+                                if (date.today() - post_date).days > 14:
+                                    continue
+                            except (ValueError, TypeError):
+                                pass
                         results.append({
                             "title":       title,
                             "company":     display_name,
@@ -4459,6 +4504,18 @@ def _run_pipeline(force_send, verbose, today, on_vacation, return_day,
     if backfilled:
         print(f"  Company backfill: {backfilled} jobs got company name from URL")
 
+    # Strip "- Myworkdayjobs.com" and similar ATS domain suffixes from titles
+    # (Brave/Tavily pick up the HTML <title> which includes the domain name)
+    _ATS_TITLE_SUFFIX_RE = re.compile(
+        r"\s*[-–|]\s*(myworkdayjobs\.com|greenhouse\.io|lever\.co|ashbyhq\.com|ultipro\.com|workday\.com)\s*$",
+        re.IGNORECASE,
+    )
+    for job in raw:
+        title = job.get("title", "")
+        cleaned = _ATS_TITLE_SUFFIX_RE.sub("", title).strip()
+        if cleaned != title:
+            job["title"] = cleaned
+
     # Drop any Brave/Tavily/LinkedIn result with an empty company.
     passing, rejected = [], []
     for j in raw:
@@ -4546,6 +4603,12 @@ def _run_pipeline(force_send, verbose, today, on_vacation, return_day,
     # job page for each result that survived filtering so Claude gets a full JD.
     # Only runs for jobs that are new and will reach Claude — not raw results.
     brave_tavily_enrich_descriptions(new_jobs)
+
+    # ── Remove dead links detected during enrichment ──────────────────────────
+    dead_count = sum(1 for j in new_jobs if j.get("_dead_link"))
+    if dead_count:
+        new_jobs = [j for j in new_jobs if not j.get("_dead_link")]
+        print(f"  Removed {dead_count} dead link(s) (404/410)")
 
     # ── Post-enrichment salary backfill + re-filter ───────────────────────────
     # LinkedIn jobs have no description at salary-filter time — the description

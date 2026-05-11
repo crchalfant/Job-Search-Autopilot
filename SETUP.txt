@@ -351,6 +351,21 @@ JOB TITLE FILTER
   File: scripts/config.py — variable: WRONG_TITLE_PATTERNS
   A list of regex patterns that filter out wrong-function job titles before
   Claude sees them.
+
+DOMAIN -> COMPANY NAME MAP
+  File: scripts/config.py — variable: DOMAIN_COMPANY_MAP
+  Maps URL domain substrings to company display names for Brave/Tavily results
+  where the search API returns no company field. Add "{tenant}.wd" entries for
+  each company in your WORKDAY_COMPANIES list so Workday job pages found via
+  web search get the correct company name instead of showing blank.
+
+JUNK URL PATTERNS
+  File: scripts/config.py — variable: JUNK_URL_PATTERNS
+  Regex patterns for URLs that are generic hiring portals or landing pages
+  (not actual job postings). Jobs matching these are auto-skipped before Claude.
+  Example: r"hiring\.amazon\.com/locations/" catches Amazon's generic location
+  pages that aren't real job listings.
+
   File: scripts/job_autopilot.py — search for: "Perfect Fit" = 90-100%
   The most powerful customization. The tier definitions and hard disqualifier
   rules are plain English — edit them to describe your own situation.
@@ -420,6 +435,8 @@ Please fill in ALL of these sections in config.example.py:
   9. WORKDAY_COMPANIES — any large companies in my industry that use Workday
   10. HARD_DISQUALIFIERS — phrases I never want to see
   11. WRONG_TITLE_PATTERNS — regex patterns for wrong job titles
+  12. DOMAIN_COMPANY_MAP — URL domain -> company name mappings for Workday tenants
+  13. JUNK_URL_PATTERNS — URLs to auto-skip (hiring portals, landing pages)
 
 Return the complete config.example.py file with everything filled in so I
 can save it directly as my config.py.
